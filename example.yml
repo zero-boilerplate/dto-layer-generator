@@ -1,0 +1,25 @@
+name: Employee
+url: /employees
+fields:
+- name: Id
+  type: int64
+- name: Name
+  type: string
+- name: EmployeeNumber
+  type: string
+- name: Employer
+  type: object
+  fields:
+  - name: Id
+    type: int64
+  - name: Name
+    type: string
+  - name: Department
+    type: string
+- name: Projects
+  type: objectarray
+  fields:
+  - name: Id
+    type: int64
+  - name: Name
+    type: string
