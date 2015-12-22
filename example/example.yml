@@ -1,5 +1,10 @@
 name: Employee
 url: /employees
+output:
+  placeholder: EMPLOYEE_PLACEHOLDER
+  plugins:
+    go: example/out/out.go
+    java: example/out/out.java
 fields:
 - name: Id
   type: int64
@@ -23,3 +28,21 @@ fields:
     type: int64
   - name: Name
     type: string
+  - name: Tasks
+    type: objectarray
+    fields:
+    - name: Id
+      type: int64
+    - name: Name
+      type: string
+    - name: IsComplete
+      type: bool
+    - name: Subtasks
+      type: objectarray
+      fields:
+      - name: Id
+        type: int64
+      - name: Name
+        type: string
+      - name: IsComplete
+        type: bool

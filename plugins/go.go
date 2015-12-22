@@ -8,34 +8,55 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/francoishill/dto-layer-generator/helpers"
 	"github.com/francoishill/dto-layer-generator/setup"
 )
 
-type GoPlugin struct{}
-
-func (g *GoPlugin) GenerateCode(dtoSetup *setup.DTOSetup) []byte {
-	var outputBuf bytes.Buffer
-	err := golangTpl.Execute(&outputBuf, dtoSetup)
-	CheckError(err)
-	generatedGoCode := outputBuf.String()
-
-	formattedGoCodeBytes, err := format.Source([]byte(generatedGoCode))
-	CheckError(err)
-	return formattedGoCodeBytes
+func NewGoPlugin() Plugin {
+	p := &goPlugin{}
+	p.tpl = template.Must(template.New("name").Funcs(template.FuncMap{"print_field": p.goPrintFieldFunc}).Parse(`
+		// Generated with github.com/francoishill/dto-layer-generator
+		type {{.Name}} struct {
+			{{range .Fields}}{{. | print_field}}
+			{{end}}
+		}
+	`))
+	return p
 }
 
-func printFieldFunc(fieldIn interface{}) string {
-	field := fieldIn.(*setup.DTOField)
-	isObject := field.Type == "object"
-	isObjectArray := field.Type == "objectarray"
-	if isObject || isObjectArray {
+type goPlugin struct {
+	tpl *template.Template
+}
+
+func (g *goPlugin) GenerateCode(logger Logger, dtoSetup *setup.DTOSetup) []byte {
+	var outputBuf bytes.Buffer
+	err := g.tpl.Execute(&outputBuf, dtoSetup)
+	CheckError(err)
+
+	prettyCode := helpers.PrettifyCode(outputBuf.Bytes(), &helpers.PrettifyRules{
+		MustPrefixWithEmptyLine:  func(trimmedLine string) bool { return strings.HasSuffix(trimmedLine, "struct {") },
+		StartIndentNextLine:      func(trimmedLine string) bool { return strings.HasSuffix(trimmedLine, "}") },
+		StopIndentingCurrentLine: func(trimmedLine string) bool { return strings.HasSuffix(trimmedLine, "{") },
+	})
+
+	formattedCodeBytes, err := format.Source(prettyCode)
+	if err != nil {
+		logger.Warn("Unable to format (gofmt) the golang code, error was: %s", err.Error())
+		return prettyCode
+	}
+
+	return formattedCodeBytes
+}
+
+func (g *goPlugin) goPrintFieldFunc(field *setup.DTOField) string {
+	if field.IsObject() || field.IsObjectArray() {
 		childFields := []string{}
 		for _, cf := range field.Fields {
-			childFields = append(childFields, printFieldFunc(cf))
+			childFields = append(childFields, g.goPrintFieldFunc(cf))
 		}
 
 		structKeywordPrefix := ""
-		if isObjectArray {
+		if field.IsObjectArray() {
 			structKeywordPrefix = "[]"
 		}
 
@@ -46,11 +67,6 @@ func printFieldFunc(fieldIn interface{}) string {
 	return fmt.Sprintf("%s %s", field.Name, field.Type)
 }
 
-var golangTpl = template.Must(template.New("name").Funcs(template.FuncMap{"print_field": printFieldFunc}).Parse(`
-	package out
-
-	type {{.Name}} struct {
-		{{range .Fields}}{{. | print_field}}
-		{{end}}
-	}
-`))
+func init() {
+	RegisterPlugin("go", NewGoPlugin())
+}
