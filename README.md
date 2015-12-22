@@ -1,4 +1,6 @@
 # dto-layer-generator
+
+[![Join the chat at https://gitter.im/francoishill/dto-layer-generator](https://badges.gitter.im/francoishill/dto-layer-generator.svg)](https://gitter.im/francoishill/dto-layer-generator?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 Generate the DTO (data transfer object) layer for your code - language agnostic by using plugins
 
 ## WORK IN PROGRESS!!!
