@@ -7,11 +7,11 @@ import (
 )
 
 func MustParseYAML(xamlBytes []byte) *DTOSetup {
-	d := &DTOSetup{}
+	d := &dtoSetupYAML{}
 	err := yaml.Unmarshal(xamlBytes, d)
 	CheckError(err)
 
-	return d
+	return NewDTOSetupFromYAML(d)
 }
 
 func MustParseYAMLFile(filePath string) *DTOSetup {

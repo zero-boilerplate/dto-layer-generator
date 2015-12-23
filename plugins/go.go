@@ -17,7 +17,7 @@ func NewGoPlugin() Plugin {
 	p.tpl = template.Must(template.New("name").Funcs(template.FuncMap{"print_field": p.goPrintFieldFunc}).Parse(`
 		// Generated with github.com/zero-boilerplate/dto-layer-generator
 		type {{.Name}} struct {
-			{{range .Fields}}{{. | print_field}}
+			{{range .AllFields}}{{. | print_field}}
 			{{end}}
 		}
 	`))
@@ -49,21 +49,6 @@ func (g *goPlugin) GenerateCode(logger helpers.Logger, dtoSetup *setup.DTOSetup)
 }
 
 func (g *goPlugin) goPrintFieldFunc(field *setup.DTOField) string {
-	if field.IsObject() || field.IsObjectArray() {
-		childFields := []string{}
-		for _, cf := range field.Fields {
-			childFields = append(childFields, g.goPrintFieldFunc(cf))
-		}
-
-		structKeywordPrefix := ""
-		if field.IsObjectArray() {
-			structKeywordPrefix = "[]"
-		}
-
-		return fmt.Sprintf(`%s %sstruct {
-			%s
-		}`, field.Name, structKeywordPrefix, strings.Join(childFields, "\n"))
-	}
 	return fmt.Sprintf("%s %s", field.Name, field.Type)
 }
 
