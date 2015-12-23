@@ -28,7 +28,7 @@ type goPlugin struct {
 	tpl *template.Template
 }
 
-func (g *goPlugin) GenerateCode(logger Logger, dtoSetup *setup.DTOSetup) []byte {
+func (g *goPlugin) GenerateCode(logger helpers.Logger, dtoSetup *setup.DTOSetup) []byte {
 	var outputBuf bytes.Buffer
 	err := g.tpl.Execute(&outputBuf, dtoSetup)
 	CheckError(err)

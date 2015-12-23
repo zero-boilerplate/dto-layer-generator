@@ -19,6 +19,14 @@ func (t *tmpLogger) Warn(msg string, params ...interface{}) {
 	fmt.Println(fmt.Sprintf("[W] "+msg, params...))
 }
 
+func (t *tmpLogger) Info(msg string, params ...interface{}) {
+	fmt.Println(fmt.Sprintf("[I] "+msg, params...))
+}
+
+func (t *tmpLogger) Debug(msg string, params ...interface{}) {
+	fmt.Println(fmt.Sprintf("[D] "+msg, params...))
+}
+
 func main() {
 	logger := &tmpLogger{}
 	defer func() {
@@ -33,9 +41,11 @@ func main() {
 
 	dtoSetup := setup.MustParseYAMLFile(os.Args[1])
 
+	logger.Debug("Found %d plugins", len(dtoSetup.Output.Plugins))
 	for pluginName, outputFilePath := range dtoSetup.Output.Plugins {
 		plugin := plugins.ParsePluginFromName(pluginName)
 		helpers.InjectContentIntoFilePlaceholder(
+			logger,
 			outputFilePath.String(),
 			dtoSetup.Output.Placeholder,
 			string(plugin.GenerateCode(logger, dtoSetup)))

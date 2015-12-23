@@ -7,9 +7,12 @@ import (
 	"strings"
 )
 
-func InjectContentIntoFilePlaceholder(filePath, placeholder, content string) {
+func InjectContentIntoFilePlaceholder(logger Logger, filePath, placeholder, content string) {
 	finalContent := content
+	globalSnippetIndentSpaces := ""
 	if osutils.FileExists(filePath) {
+		logger.Debug("Found existing file '%s'. Replacing the placeholders.", filePath)
+
 		fileContent, err := ioutil.ReadFile(filePath)
 		CheckError(err)
 
@@ -20,19 +23,31 @@ func InjectContentIntoFilePlaceholder(filePath, placeholder, content string) {
 
 		origLines := strings.Split(string(fileContent), "\n")
 		finalLines := []string{}
-		for _, line := range origLines {
-			trimmedLine := strings.TrimSpace(line)
+		for _, originalLine := range origLines {
+			trimmedLine := strings.TrimSpace(originalLine)
 
 			if strings.Contains(trimmedLine, endText) {
 				isBeginPlaceholder = false
-				finalLines = append(finalLines, trimmedLine)
+				finalLines = append(finalLines, globalSnippetIndentSpaces+trimmedLine)
 				continue
 			}
 
 			if strings.Contains(trimmedLine, beginText) {
 				isBeginPlaceholder = true
-				finalLines = append(finalLines, trimmedLine)
-				finalLines = append(finalLines, content)
+				finalLines = append(finalLines, originalLine)
+
+				//Indent all the code with the same indentation as the 'begin' placeholder line
+				prefixSpacesCount := len(originalLine) - len(strings.TrimLeft(originalLine, " "))
+				globalSnippetIndentSpaces = strings.Repeat(" ", prefixSpacesCount)
+
+				contentLines := strings.Split(content, "\n")
+				for index, _ := range contentLines {
+					contentLines[index] = globalSnippetIndentSpaces + contentLines[index]
+				}
+				finalLines = append(finalLines, strings.Join(contentLines, "\n"))
+
+				logger.Debug("Appended content after line containing '%s'", beginText)
+
 				continue
 			}
 
@@ -41,8 +56,9 @@ func InjectContentIntoFilePlaceholder(filePath, placeholder, content string) {
 				continue
 			}
 
-			finalLines = append(finalLines, trimmedLine)
+			finalLines = append(finalLines, originalLine)
 		}
+
 		finalContent = strings.Join(finalLines, "\n")
 	}
 	err := ioutil.WriteFile(filePath, []byte(finalContent), 0600)

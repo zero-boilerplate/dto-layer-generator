@@ -18,6 +18,7 @@ func NewJavaPlugin() Plugin {
 		"print_field":       p.javaPrintFieldFunc,
 		"print_field_class": p.javaPrintFieldClassFunc,
 	}).Parse(`
+		//region generated {{.Name}}
 		// Generated with github.com/zero-boilerplate/dto-layer-generator
 		private class {{.Name}} {
 			{{range .Fields}}{{. | print_field}}
@@ -25,6 +26,7 @@ func NewJavaPlugin() Plugin {
 			{{range .Fields}}{{. | print_field_class}}
 			{{end}}
 		}
+		//endregion
 	`))
 
 	p.typeNameMap = map[string]string{
@@ -53,7 +55,7 @@ type javaPlugin struct {
 	typeNameMap map[string]string
 }
 
-func (j *javaPlugin) GenerateCode(logger Logger, dtoSetup *setup.DTOSetup) []byte {
+func (j *javaPlugin) GenerateCode(logger helpers.Logger, dtoSetup *setup.DTOSetup) []byte {
 	var outputBuf bytes.Buffer
 	err := j.tpl.Execute(&outputBuf, dtoSetup)
 	CheckError(err)
