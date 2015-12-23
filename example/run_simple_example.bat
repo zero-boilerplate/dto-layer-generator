@@ -12,11 +12,11 @@ GOTO EOF
 ::———————————————————
 
 pushd ".."
-echo Running go build... ^
-    & go build -o "dto-layer-generator.exe"^
+echo Running go install... ^
+    & go install^
     & if errorlevel 1 goto ERROR
-echo Running exe dto-layer-generator.exe... ^
-    & dto-layer-generator.exe "example/example.yml" ^
+echo Running exe dto-layer-generator.exe from gopath/bin... ^
+    & "%GOPATH%/bin/dto-layer-generator.exe" "example/simple_example.yml" ^
     & if errorlevel 1 goto ERROR
 
 goto SUCCESS

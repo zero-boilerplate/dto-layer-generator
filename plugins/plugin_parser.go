@@ -1,7 +1,7 @@
 package plugins
 
 import (
-	"github.com/francoishill/dto-layer-generator/setup"
+	"github.com/zero-boilerplate/dto-layer-generator/setup"
 )
 
 func ParsePluginFromName(name setup.PluginName) Plugin {

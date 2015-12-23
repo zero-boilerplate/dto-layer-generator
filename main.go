@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/francoishill/dto-layer-generator/helpers"
-	"github.com/francoishill/dto-layer-generator/plugins"
-	"github.com/francoishill/dto-layer-generator/setup"
+	"github.com/zero-boilerplate/dto-layer-generator/helpers"
+	"github.com/zero-boilerplate/dto-layer-generator/plugins"
+	"github.com/zero-boilerplate/dto-layer-generator/setup"
 )
 
 type tmpLogger struct{}

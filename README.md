@@ -1,6 +1,6 @@
 # DTO Layer Generator
 
-[![Join the chat at https://gitter.im/francoishill/dto-layer-generator](https://badges.gitter.im/francoishill/dto-layer-generator.svg)](https://gitter.im/francoishill/dto-layer-generator?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+[![Join the chat at https://gitter.im/zero-boilerplate/dto-layer-generator](https://badges.gitter.im/zero-boilerplate/dto-layer-generator.svg)](https://gitter.im/zero-boilerplate/dto-layer-generator?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 Generate the DTO (data transfer object) layer for your code - language agnostic by using plugins
 
 # Support
@@ -24,23 +24,24 @@ In the `example/out` dir you will see an example of how the placeholders are use
 
 ## Example
 
-Refer to the `example` folder in this git repo. You will see `example.yml` file that is a demo setup of how your "DTO definition/setup" will look.
+Refer to the `example` folder in this git repo. You will see `simple_example.yml` file that is a demo setup of how your "DTO definition/setup" will look. The file `nested_example.yml` is one with nested objects in your DTO.
 
 Windows:
 ```
-go get github.com/francoishill/dto-layer-generator
-cd "%gopath%/src/github.com/francoishill/dto-layer-generator/example"
-run.bat
+go get github.com/zero-boilerplate/dto-layer-generator
+cd "%gopath%/src/github.com/zero-boilerplate/dto-layer-generator"
+"%GOPATH%/bin/dto-layer-generator.exe" "example/simple_example.yml"
+:: "%GOPATH%/bin/dto-layer-generator.exe" "example/nested_example.yml"
 ```
 
 Linux:
 ```
-go get github.com/francoishill/dto-layer-generator
-cd "%gopath%/src/github.com/francoishill/dto-layer-generator"
-go build -o=tmp_bin
-./tmp_bin "example/example.yml"
+go get github.com/zero-boilerplate/dto-layer-generator
+cd "$gopath/src/github.com/zero-boilerplate/dto-layer-generator"
+"$GOPATH/bin/dto-layer-generator.exe" "example/simple_example.yml"
+# "$GOPATH/bin/dto-layer-generator.exe" "example/nested_example.yml"
 ```
-Now have look at the above mentioned files (in the **Placeholders** section) to see their structs/classes generated from the input `example.yml` file.
+Now have look at the above mentioned files (in the **Placeholders** section) to see their structs/classes generated from the input `...example.yml` file.
 
 ## Supported types
 
@@ -66,3 +67,5 @@ Supported types (using the builtin types of golang, newly added plugins should h
 ## Adding an open-source plugin
 
 It is always the simplest to just look at an example. See the java example in dir `plugins/java.go`. But it boils down to that you should implement the interface `plugins/Plugin` and call the `RegisterPlugin()` method with the alias and your new plugin's instance. This registration is best done in the plugin's own file with the `init()` func - like in the java example.
+
+After updating code locally you can just call the `go install` command in the `%gopath%/src/github.com/zero-boilerplate/dto-layer-generator` dir to regenerate the binary into the `%GOPATH%/bin` dir.

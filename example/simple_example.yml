@@ -1,0 +1,14 @@
+name: Employee
+url: /employees
+output:
+  placeholder: EMPLOYEE_PLACEHOLDER
+  plugins:
+    go: example/out/out.go
+    java: example/out/out.java
+fields:
+- name: Id
+  type: int64
+- name: Name
+  type: string
+- name: EmployeeNumber
+  type: string

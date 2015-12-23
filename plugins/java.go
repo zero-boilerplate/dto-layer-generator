@@ -7,8 +7,8 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/francoishill/dto-layer-generator/helpers"
-	"github.com/francoishill/dto-layer-generator/setup"
+	"github.com/zero-boilerplate/dto-layer-generator/helpers"
+	"github.com/zero-boilerplate/dto-layer-generator/setup"
 )
 
 func NewJavaPlugin() Plugin {
@@ -18,7 +18,7 @@ func NewJavaPlugin() Plugin {
 		"print_field":       p.javaPrintFieldFunc,
 		"print_field_class": p.javaPrintFieldClassFunc,
 	}).Parse(`
-		// Generated with github.com/francoishill/dto-layer-generator
+		// Generated with github.com/zero-boilerplate/dto-layer-generator
 		private class {{.Name}} {
 			{{range .Fields}}{{. | print_field}}
 			{{end}}

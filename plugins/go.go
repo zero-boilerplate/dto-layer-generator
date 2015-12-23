@@ -8,14 +8,14 @@ import (
 	"strings"
 	"text/template"
 
-	"github.com/francoishill/dto-layer-generator/helpers"
-	"github.com/francoishill/dto-layer-generator/setup"
+	"github.com/zero-boilerplate/dto-layer-generator/helpers"
+	"github.com/zero-boilerplate/dto-layer-generator/setup"
 )
 
 func NewGoPlugin() Plugin {
 	p := &goPlugin{}
 	p.tpl = template.Must(template.New("name").Funcs(template.FuncMap{"print_field": p.goPrintFieldFunc}).Parse(`
-		// Generated with github.com/francoishill/dto-layer-generator
+		// Generated with github.com/zero-boilerplate/dto-layer-generator
 		type {{.Name}} struct {
 			{{range .Fields}}{{. | print_field}}
 			{{end}}
