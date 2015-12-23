@@ -7,6 +7,10 @@ import (
 	"strings"
 )
 
+func replaceTabsWithSpaces(s string) string {
+	return strings.Replace(s, "\t", "    ", -1)
+}
+
 func InjectContentIntoFilePlaceholder(logger Logger, filePath, placeholder, content string) {
 	finalContent := content
 	globalSnippetIndentSpaces := ""
@@ -25,6 +29,7 @@ func InjectContentIntoFilePlaceholder(logger Logger, filePath, placeholder, cont
 		finalLines := []string{}
 		for _, originalLine := range origLines {
 			trimmedLine := strings.TrimSpace(originalLine)
+			lineWithTabsReplacedBySpaces := replaceTabsWithSpaces(originalLine)
 
 			if strings.Contains(trimmedLine, endText) {
 				isBeginPlaceholder = false
@@ -34,15 +39,16 @@ func InjectContentIntoFilePlaceholder(logger Logger, filePath, placeholder, cont
 
 			if strings.Contains(trimmedLine, beginText) {
 				isBeginPlaceholder = true
-				finalLines = append(finalLines, originalLine)
 
 				//Indent all the code with the same indentation as the 'begin' placeholder line
-				prefixSpacesCount := len(originalLine) - len(strings.TrimLeft(originalLine, " "))
+				prefixSpacesCount := len(lineWithTabsReplacedBySpaces) - len(strings.TrimLeft(lineWithTabsReplacedBySpaces, " "))
 				globalSnippetIndentSpaces = strings.Repeat(" ", prefixSpacesCount)
+
+				finalLines = append(finalLines, globalSnippetIndentSpaces+trimmedLine)
 
 				contentLines := strings.Split(content, "\n")
 				for index, _ := range contentLines {
-					contentLines[index] = globalSnippetIndentSpaces + contentLines[index]
+					contentLines[index] = globalSnippetIndentSpaces + replaceTabsWithSpaces(contentLines[index])
 				}
 				finalLines = append(finalLines, strings.Join(contentLines, "\n"))
 
@@ -56,6 +62,7 @@ func InjectContentIntoFilePlaceholder(logger Logger, filePath, placeholder, cont
 				continue
 			}
 
+			//These are the code lines "outside" of the placeholder block, so keep the lines untouched
 			finalLines = append(finalLines, originalLine)
 		}
 
