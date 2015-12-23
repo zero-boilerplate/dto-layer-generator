@@ -4,6 +4,10 @@ import (
 	"fmt"
 	"os"
 
+	//Required for plugins to register
+	_ "github.com/zero-boilerplate/dto-layer-generator/plugins/client"
+	_ "github.com/zero-boilerplate/dto-layer-generator/plugins/server"
+
 	"github.com/zero-boilerplate/dto-layer-generator/helpers"
 	"github.com/zero-boilerplate/dto-layer-generator/plugins"
 	"github.com/zero-boilerplate/dto-layer-generator/setup"

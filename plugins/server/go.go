@@ -1,4 +1,4 @@
-package plugins
+package server
 
 import (
 	"bytes"
@@ -9,10 +9,11 @@ import (
 	"text/template"
 
 	"github.com/zero-boilerplate/dto-layer-generator/helpers"
+	"github.com/zero-boilerplate/dto-layer-generator/plugins"
 	"github.com/zero-boilerplate/dto-layer-generator/setup"
 )
 
-func NewGoPlugin() Plugin {
+func newGoPlugin() plugins.Plugin {
 	p := &goPlugin{}
 	p.tpl = template.Must(template.New("name").Funcs(template.FuncMap{"print_field": p.goPrintFieldFunc}).Parse(`
 		// Generated with github.com/zero-boilerplate/dto-layer-generator
@@ -53,5 +54,5 @@ func (g *goPlugin) goPrintFieldFunc(field *setup.DTOField) string {
 }
 
 func init() {
-	RegisterPlugin("go", NewGoPlugin())
+	plugins.RegisterPlugin("go", newGoPlugin())
 }

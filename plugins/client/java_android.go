@@ -1,4 +1,4 @@
-package plugins
+package client
 
 import (
 	"bytes"
@@ -9,10 +9,11 @@ import (
 	"text/template"
 
 	"github.com/zero-boilerplate/dto-layer-generator/helpers"
+	"github.com/zero-boilerplate/dto-layer-generator/plugins"
 	"github.com/zero-boilerplate/dto-layer-generator/setup"
 )
 
-func NewJavaPlugin() Plugin {
+func newJavaPlugin() plugins.Plugin {
 	p := &javaPlugin{}
 
 	p.tpl = template.Must(template.New("name").Funcs(template.FuncMap{
@@ -212,5 +213,5 @@ func (j *javaPlugin) GenerateCode(logger helpers.Logger, dtoSetup *setup.DTOSetu
 }
 
 func init() {
-	RegisterPlugin("java", NewJavaPlugin())
+	plugins.RegisterPlugin("java", newJavaPlugin())
 }
