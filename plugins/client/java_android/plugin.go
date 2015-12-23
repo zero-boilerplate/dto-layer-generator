@@ -30,6 +30,8 @@ func newJavaPlugin() plugins.Plugin {
 
 		//region generated {{.Name}}
 		// Generated with github.com/zero-boilerplate/dto-layer-generator
+
+        {{if .IsInsertMethodEnabled}}
 		private static class {{.Name}}InsertDTO {
 			private static class Request {
 	            {{.InsertableFields | fielddefs}}
@@ -43,7 +45,9 @@ func newJavaPlugin() plugins.Plugin {
 	            {{.IdField | single_fielddef}}
 	        }			
 		}
+        {{end}}
 
+        {{if .IsPatchMethodEnabled}}
 		private static class {{.Name}}PatchDTOs {
 			private static HashMap<String, Object> newReplaceMap(String fieldName, Object value) {
 	            //JSON PATCH Format: rfc6902 -- http://tools.ietf.org/html/rfc6902 -- http://jsonpatch.com/
@@ -63,9 +67,11 @@ func newJavaPlugin() plugins.Plugin {
 	                {{. | patch_request_constructor_body}}
 	            }
 	        }
-	        {{end}}
-	    }
+            {{end}}
+        }
+        {{end}}
 
+        {{if .IsListMethodEnabled}}
         private static class {{.Name}}ListDTOs {
             {{range .ListableFieldGroups}}
             private static class Response_{{. | class_name_suffix}} {
@@ -78,7 +84,9 @@ func newJavaPlugin() plugins.Plugin {
             }
             {{end}}
         }
+        {{end}}
 
+        {{if .IsGetMethodEnabled}}
         private static class {{.Name}}GetDTOs {
             {{range .GetableFieldGroups}}
             private static class Response_{{. | class_name_suffix}} {
@@ -86,30 +94,39 @@ func newJavaPlugin() plugins.Plugin {
             }
             {{end}}
         }
+        {{end}}
 
         private interface I{{.Name}}WebService {
             //This requires Retrofit to be references: http://square.github.io/retrofit/
 
+            {{if .IsInsertMethodEnabled}}
             // Insert
             @POST("{{$outerScope.Url}}")
             Call<{{$outerScope.Name}}InsertDTO.Response> insert(@Body {{$outerScope.Name}}InsertDTO.Request body);
+            {{end}}
 
+            {{if .IsPatchMethodEnabled}}
             // Patch/update
             {{range .PatchableFieldGroups}}
             @PATCH("{{$outerScope.Url}}/{id}?fields={{. | join_field_names_for_url_query}}")
             Call<Void> patch(@Path("id") {{$outerScope.IdField | field_type_name}} id, @Body {{$outerScope.Name}}PatchDTOs.Request_{{. | class_name_suffix}} body);
             {{end}}
+            {{end}}
 
+            {{if .IsListMethodEnabled}}
             // List
             {{range .ListableFieldGroups}}
             @GET("{{$outerScope.Url}}?fields={{. | join_field_names_for_url_query}}")
             Call<{{$outerScope.Name}}ListDTOs.Response_{{. | class_name_suffix}}> list_{{. | class_name_suffix}}();
             {{end}}
+            {{end}}
 
+            {{if .IsGetMethodEnabled}}
             // Get single
             {{range .GetableFieldGroups}}
             @GET("{{$outerScope.Url}}/{id}?fields={{. | join_field_names_for_url_query}}")
             Call<{{$outerScope.Name}}GetDTOs.Response_{{. | class_name_suffix}}> get_{{. | class_name_suffix}}(@Path("id") {{$outerScope.IdField | field_type_name}} id);
+            {{end}}
             {{end}}
         }
 
@@ -207,8 +224,8 @@ func (j *javaPlugin) GenerateCode(logger helpers.Logger, dtoSetup *setup.DTOSetu
 
 	return helpers.PrettifyCode(outputBuf.Bytes(), &helpers.PrettifyRules{
 		MustPrefixWithEmptyLine:  func(trimmedLine string) bool { return strings.HasPrefix(trimmedLine, "private class") },
-		StartIndentNextLine:      func(trimmedLine string) bool { return strings.HasSuffix(trimmedLine, "}") },
-		StopIndentingCurrentLine: func(trimmedLine string) bool { return strings.HasSuffix(trimmedLine, "{") },
+		StartIndentNextLine:      func(trimmedLine string) bool { return strings.HasSuffix(trimmedLine, "{") },
+		StopIndentingCurrentLine: func(trimmedLine string) bool { return strings.HasSuffix(trimmedLine, "}") },
 	})
 }
 

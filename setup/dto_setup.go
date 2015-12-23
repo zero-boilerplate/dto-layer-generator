@@ -2,6 +2,7 @@ package setup
 
 import (
 	"fmt"
+	"strings"
 )
 
 type PluginName string
@@ -13,8 +14,10 @@ type OutputFilePath string
 func (o OutputFilePath) String() string { return string(o) }
 
 type dtoSetupYAML struct {
-	Name   string
-	Url    string
+	Name           string
+	Url            string
+	EnabledMethods []string `json:"enabled_methods"`
+
 	Output struct {
 		Placeholder string
 		Plugins     map[PluginName]OutputFilePath
@@ -27,8 +30,29 @@ type dtoSetupYAML struct {
 	PatchableFieldNameGroups [][]string  `json:"patchable_field_name_groups"`
 }
 
+func (d *dtoSetupYAML) validate() {
+	allowedMethods := []string{"INSERT", "PATCH", "LIST", "GET"}
+	for _, m := range d.EnabledMethods {
+		isAllowed := false
+		for _, am := range allowedMethods {
+			if strings.EqualFold(strings.TrimSpace(m), strings.TrimSpace(am)) {
+				isAllowed = true
+				break
+			}
+		}
+		if !isAllowed {
+			panic("Unsupported http method specified: " + m)
+		}
+	}
+}
+
 type DTOSetup struct {
 	*dtoSetupYAML
+
+	IsInsertMethodEnabled bool
+	IsPatchMethodEnabled  bool
+	IsListMethodEnabled   bool
+	IsGetMethodEnabled    bool
 
 	IdField              *DTOField
 	InsertableFields     []*DTOField
@@ -38,13 +62,31 @@ type DTOSetup struct {
 }
 
 func NewDTOSetupFromYAML(setup *dtoSetupYAML) *DTOSetup {
+	setup.validate()
+
 	d := &DTOSetup{dtoSetupYAML: setup}
+
+	d.IsInsertMethodEnabled = d.isMethodEnabled("INSERT")
+	d.IsPatchMethodEnabled = d.isMethodEnabled("PATCH")
+	d.IsListMethodEnabled = d.isMethodEnabled("LIST")
+	d.IsGetMethodEnabled = d.isMethodEnabled("GET")
+
 	d.IdField = d.getIdField()
 	d.InsertableFields = d.getInsertableFields()
 	d.ListableFieldGroups = d.getListableFieldGroups()
 	d.GetableFieldGroups = d.getGetableFieldGroups()
 	d.PatchableFieldGroups = d.getPatchableFieldGroups()
+
 	return d
+}
+
+func (d *DTOSetup) isMethodEnabled(methodName string) bool {
+	for _, m := range d.EnabledMethods {
+		if strings.EqualFold(strings.TrimSpace(m), strings.TrimSpace(methodName)) {
+			return true
+		}
+	}
+	return false
 }
 
 func (d *DTOSetup) getFieldByName(name string) *DTOField {

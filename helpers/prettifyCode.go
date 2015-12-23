@@ -29,13 +29,13 @@ func PrettifyCode(code []byte, rules *PrettifyRules) []byte {
 			linePrefix = "\n"
 		}
 
-		if rules != nil && rules.StartIndentNextLine != nil && rules.StartIndentNextLine(trimmedLine) {
+		if rules != nil && rules.StopIndentingCurrentLine != nil && rules.StopIndentingCurrentLine(trimmedLine) {
 			currentIndent = currentIndent[:len(currentIndent)-len(indentStr)]
 		}
 
 		prettyLines = append(prettyLines, linePrefix+currentIndent+trimmedLine)
 
-		if rules != nil && rules.StopIndentingCurrentLine != nil && rules.StopIndentingCurrentLine(trimmedLine) {
+		if rules != nil && rules.StartIndentNextLine != nil && rules.StartIndentNextLine(trimmedLine) {
 			currentIndent += indentStr
 		}
 	}
