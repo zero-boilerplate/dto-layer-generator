@@ -5,8 +5,8 @@ import (
 	"os"
 
 	//Required for plugins to register
-	_ "github.com/zero-boilerplate/dto-layer-generator/plugins/client"
-	_ "github.com/zero-boilerplate/dto-layer-generator/plugins/server"
+	_ "github.com/zero-boilerplate/dto-layer-generator/plugins/client/java_android"
+	_ "github.com/zero-boilerplate/dto-layer-generator/plugins/server/go"
 
 	"github.com/zero-boilerplate/dto-layer-generator/helpers"
 	"github.com/zero-boilerplate/dto-layer-generator/plugins"
@@ -36,6 +36,7 @@ func main() {
 	defer func() {
 		if r := recover(); r != nil {
 			logger.Error("FAILURE: %#v", r)
+			os.Exit(2)
 		}
 	}()
 
