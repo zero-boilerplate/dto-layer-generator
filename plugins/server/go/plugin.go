@@ -25,7 +25,7 @@ func newGoPlugin() plugins.Plugin {
 		// Generated with github.com/zero-boilerplate/dto-layer-generator
 		
 		func (c *controller) RelativeURLPatterns() []string {
-			return []string{"{{.Url}}", "{{.Url}}/{id}"}
+			return []string{"{{.UrlWithStartingSlash}}", "{{.UrlWithStartingSlash}}/{id}"}
 		}
 		
 		{{if .IsInsertMethodEnabled}}
@@ -54,8 +54,8 @@ func newGoPlugin() plugins.Plugin {
 		{{if .IsDeleteMethodEnabled}}
 		func (c *controller) Delete(w http.ResponseWriter, r *http.Request) {
 			authUser := c.GetUserFromRequest(r)
-			id := c.MustUrlParamValue(r, "id").Int64()
-			c.delete{{$outerScope.Name}}(authUser, id)
+			idVal := c.MustUrlParamValue(r, "id")
+			c.delete{{$outerScope.Name}}ById(authUser, idVal)
 		}
 		{{end}}
 
@@ -67,7 +67,7 @@ func newGoPlugin() plugins.Plugin {
 			if idVal.HasValue() {
 				{{if .IsGetMethodEnabled}}
 				//Get
-				c.RenderJson(w, c.get{{$outerScope.Name}}ByIdRequestValue(authUser, idVal))
+				c.RenderJson(w, c.get{{$outerScope.Name}}ById(authUser, idVal))
 				{{else}}
 				//Get method disabled in dto generator
 				{{end}}

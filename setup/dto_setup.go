@@ -56,6 +56,8 @@ func (d *dtoSetupYAML) resolveEnvironmentVariablesInPaths() {
 type DTOSetup struct {
 	*dtoSetupYAML
 
+	UrlWithStartingSlash string
+
 	IsInsertMethodEnabled bool
 	IsPatchMethodEnabled  bool
 	IsListMethodEnabled   bool
@@ -76,6 +78,14 @@ func NewDTOSetupFromYAML(setup *dtoSetupYAML) *DTOSetup {
 	setup.resolveEnvironmentVariablesInPaths()
 
 	d := &DTOSetup{dtoSetupYAML: setup}
+
+	if len(strings.TrimSpace(d.Url)) > 0 {
+		if d.Url[0] == '/' {
+			d.UrlWithStartingSlash = d.Url
+		} else {
+			d.UrlWithStartingSlash = "/" + d.Url
+		}
+	}
 
 	d.IsInsertMethodEnabled = d.isMethodEnabled("INSERT")
 	d.IsPatchMethodEnabled = d.isMethodEnabled("PATCH")
