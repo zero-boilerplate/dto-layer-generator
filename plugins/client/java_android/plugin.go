@@ -26,11 +26,10 @@ func newJavaPlugin() plugins.Plugin {
 		"patch_request_constructor_body": p.funcPatchRequestConstructorBody,
 		"join_field_names_for_url_query": p.funcJoinFieldNamesForUrlQuery,
 	}).Parse(`
-        {{$outerScope := .}}
-
 		//region generated {{.Name}}
 		// Generated with github.com/zero-boilerplate/dto-layer-generator
 
+        {{$outerScope := .}}
         {{if .IsInsertMethodEnabled}}
 		private static class {{.Name}}InsertDTO {
 			private static class Request {
@@ -127,6 +126,11 @@ func newJavaPlugin() plugins.Plugin {
             @GET("{{$outerScope.Url}}/{id}?fields={{. | join_field_names_for_url_query}}")
             Call<{{$outerScope.Name}}GetDTOs.Response_{{. | class_name_suffix}}> get_{{. | class_name_suffix}}(@Path("id") {{$outerScope.IdField | field_type_name}} id);
             {{end}}
+            {{end}}
+
+            {{if .IsDeleteMethodEnabled}}
+            @DELETE("{{$outerScope.Url}}/{id}")
+            Call<Void> delete(@Path("id") {{$outerScope.IdField | field_type_name}} id);
             {{end}}
         }
 

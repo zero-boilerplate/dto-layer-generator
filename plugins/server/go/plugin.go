@@ -51,8 +51,15 @@ func newGoPlugin() plugins.Plugin {
 		{{end}}
 		{{end}}
 
-		
-		func (c *controller) Get(w http.ResponseWriter, r *http.Request, ctx *RouterContext) {
+		{{if .IsDeleteMethodEnabled}}
+		func (c *controller) Delete(w http.ResponseWriter, r *http.Request) {
+			authUser := c.GetUserFromRequest(r)
+			id := c.MustUrlParamValue(r, "id").Int64()
+			c.delete{{$outerScope.Name}}(authUser, id)
+		}
+		{{end}}
+
+		func (c *controller) Get(w http.ResponseWriter, r *http.Request) {
 			idVal := c.OptionalUrlParamValue(r, "id")
 			
 			authUser := c.GetUserFromRequest(r)

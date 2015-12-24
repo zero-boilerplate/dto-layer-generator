@@ -18,9 +18,16 @@ func PrettifyCode(code []byte, rules *PrettifyRules) []byte {
 
 	currentIndent := ""
 	indentStr := "\t"
-	for _, line := range originalLines {
+	for index, line := range originalLines {
 		trimmedLine := strings.TrimSpace(line)
 		if trimmedLine == "" {
+			if index < len(originalLines)-1 {
+				nextLineTrimmed := strings.TrimSpace(originalLines[index+1])
+				if nextLineTrimmed != "" {
+					//Only if the next line is NOT blank do we keep the empty line
+					prettyLines = append(prettyLines, "")
+				}
+			}
 			continue
 		}
 

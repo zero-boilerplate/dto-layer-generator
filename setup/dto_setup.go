@@ -32,7 +32,7 @@ type dtoSetupYAML struct {
 }
 
 func (d *dtoSetupYAML) validate() {
-	allowedMethods := []string{"INSERT", "PATCH", "LIST", "GET"}
+	allowedMethods := []string{"INSERT", "PATCH", "LIST", "GET", "DELETE"}
 	for _, m := range d.EnabledMethods {
 		isAllowed := false
 		for _, am := range allowedMethods {
@@ -60,6 +60,7 @@ type DTOSetup struct {
 	IsPatchMethodEnabled  bool
 	IsListMethodEnabled   bool
 	IsGetMethodEnabled    bool
+	IsDeleteMethodEnabled bool
 
 	IsGetORListMethodEnabled bool
 
@@ -80,6 +81,7 @@ func NewDTOSetupFromYAML(setup *dtoSetupYAML) *DTOSetup {
 	d.IsPatchMethodEnabled = d.isMethodEnabled("PATCH")
 	d.IsListMethodEnabled = d.isMethodEnabled("LIST")
 	d.IsGetMethodEnabled = d.isMethodEnabled("GET")
+	d.IsDeleteMethodEnabled = d.isMethodEnabled("DELETE")
 
 	d.IsGetORListMethodEnabled = d.IsGetMethodEnabled || d.IsListMethodEnabled
 
