@@ -2,6 +2,7 @@ package setup
 
 import (
 	"fmt"
+	"os"
 	"strings"
 )
 
@@ -46,6 +47,12 @@ func (d *dtoSetupYAML) validate() {
 	}
 }
 
+func (d *dtoSetupYAML) resolveEnvironmentVariablesInPaths() {
+	for pluginName, pluginPath := range d.Output.Plugins {
+		d.Output.Plugins[pluginName] = OutputFilePath(os.ExpandEnv(pluginPath.String()))
+	}
+}
+
 type DTOSetup struct {
 	*dtoSetupYAML
 
@@ -53,6 +60,8 @@ type DTOSetup struct {
 	IsPatchMethodEnabled  bool
 	IsListMethodEnabled   bool
 	IsGetMethodEnabled    bool
+
+	IsGetORListMethodEnabled bool
 
 	IdField              *DTOField
 	InsertableFields     []*DTOField
@@ -63,6 +72,7 @@ type DTOSetup struct {
 
 func NewDTOSetupFromYAML(setup *dtoSetupYAML) *DTOSetup {
 	setup.validate()
+	setup.resolveEnvironmentVariablesInPaths()
 
 	d := &DTOSetup{dtoSetupYAML: setup}
 
@@ -70,6 +80,8 @@ func NewDTOSetupFromYAML(setup *dtoSetupYAML) *DTOSetup {
 	d.IsPatchMethodEnabled = d.isMethodEnabled("PATCH")
 	d.IsListMethodEnabled = d.isMethodEnabled("LIST")
 	d.IsGetMethodEnabled = d.isMethodEnabled("GET")
+
+	d.IsGetORListMethodEnabled = d.IsGetMethodEnabled || d.IsListMethodEnabled
 
 	d.IdField = d.getIdField()
 	d.InsertableFields = d.getInsertableFields()
