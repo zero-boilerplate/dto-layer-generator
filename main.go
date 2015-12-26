@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/fatih/color"
 	"os"
 
 	//Required for plugins to register
@@ -13,26 +14,37 @@ import (
 	"github.com/zero-boilerplate/dto-layer-generator/setup"
 )
 
-type tmpLogger struct{}
+type tmpLogger struct {
+	errColor   *color.Color
+	warnColor  *color.Color
+	infoColor  *color.Color
+	debugColor *color.Color
+}
 
 func (t *tmpLogger) Error(msg string, params ...interface{}) {
-	fmt.Println(fmt.Sprintf("[E] "+msg, params...))
+	t.errColor.Println(fmt.Sprintf("[E] "+msg, params...))
 }
 
 func (t *tmpLogger) Warn(msg string, params ...interface{}) {
-	fmt.Println(fmt.Sprintf("[W] "+msg, params...))
+	t.warnColor.Println(fmt.Sprintf("[W] "+msg, params...))
 }
 
 func (t *tmpLogger) Info(msg string, params ...interface{}) {
-	fmt.Println(fmt.Sprintf("[I] "+msg, params...))
+	t.infoColor.Println(fmt.Sprintf("[I] "+msg, params...))
 }
 
 func (t *tmpLogger) Debug(msg string, params ...interface{}) {
-	fmt.Println(fmt.Sprintf("[D] "+msg, params...))
+	t.debugColor.Println(fmt.Sprintf("[D] "+msg, params...))
 }
 
 func main() {
-	logger := &tmpLogger{}
+	logger := &tmpLogger{
+		color.New(color.FgHiRed, color.Bold),
+		color.New(color.FgMagenta),
+		color.New(color.FgHiWhite),
+		color.New(color.FgWhite),
+	}
+
 	defer func() {
 		if r := recover(); r != nil {
 			logger.Error("FAILURE: %#v", r)
