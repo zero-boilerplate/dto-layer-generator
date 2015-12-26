@@ -17,38 +17,105 @@ import (
 func newGoPlugin() plugins.Plugin {
 	p := &goPlugin{}
 	p.tpl = template.Must(template.New("name").Funcs(template.FuncMap{
+		"field_type_name":                p.funcFieldTypeName,
 		"fielddefs":                      p.funcFieldDefinitions,
 		"class_name_suffix":              p.funcClassNameSuffix,
 		"join_field_names_for_url_query": p.funcJoinFieldNamesForUrlQuery,
 	}).Parse(`
 		{{$outerScope := .}}
 		// Generated with github.com/zero-boilerplate/dto-layer-generator
+		// Required imports:
+		// - "github.com/mholt/binding"
 		
 		func (c *controller) RelativeURLPatterns() []string {
 			return []string{"{{.UrlWithStartingSlash}}", "{{.UrlWithStartingSlash}}/{id}"}
 		}
 		
 		{{if .IsInsertMethodEnabled}}
+		type insertDTO_Request struct {
+			{{.InsertableFields | fielddefs}}
+		}
+
+		func (i *insertDTO_Request) FieldMap(r *http.Request) binding.FieldMap {
+			return binding.FieldMap{}
+		}
 		{{end}}
 		
 		{{if .IsPatchMethodEnabled}}
+		//JSON PATCH Format: rfc6902 -- http://tools.ietf.org/html/rfc6902 -- http://jsonpatch.com/
+		type patchOperationDTO struct {
+			Operation string      ` + "`json:\"op\"`" + `
+			Path      string      ` + "`json:\"path\"`" + `
+			Value     interface{} ` + "`json:\"value\"`" + `
+		}
 		{{end}}
-		
-		{{if .IsGetORListMethodEnabled}}
-
 		
 		{{if .IsGetMethodEnabled}}
+		{{range $group := .GetableFieldGroups}}
+		type getDTO_Response__{{. | class_name_suffix}} struct {
+			{{$group | fielddefs}}
+		}
 		{{end}}
+		{{end}}
+
 		{{if .IsListMethodEnabled}}
 		{{range $group := .ListableFieldGroups}}
-		type listEntity_{{. | class_name_suffix}} struct {
+		type listEntity_Response__{{. | class_name_suffix}} struct {
 			{{$group | fielddefs}}
 		}
 		type listDTO_{{. | class_name_suffix}} struct {
-			List       []*listEntity_{{. | class_name_suffix}}
+			List       []*listEntity_Response__{{. | class_name_suffix}}
 			TotalCount int64
 		}
 		{{end}}
+		{{end}}
+
+		
+
+		{{if .IsInsertMethodEnabled}}
+		func (c *controller) Insert(w http.ResponseWriter, r *http.Request) {
+			dto := &insertDTO_Request{}
+			errs := binding.Json(r, dto)
+			if errs.Handle(w) {
+				return
+			}
+
+			authUser := c.GetUserFromRequest(r)
+			id := c.insert{{$outerScope.Name}}(authUser, dto)
+			c.RenderJson(w, struct{
+				Id {{$outerScope.IdField | field_type_name}}
+			}{id})
+		}
+		{{end}}
+
+		{{if .IsPatchMethodEnabled}}
+		func (c *controller) Patch(w http.ResponseWriter, r *http.Request) {
+			idVal := c.MustUrlParamValue(r, "id")
+
+			dbTx := c.MustBeginTransaction()
+			defer c.DeferableCommitOnSuccessRollbackOnFail(dbTx)
+
+			operations := []*patchOperationDTO{}
+			c.Ctx.Misc.HttpRequestHelperService.DecodeJsonRequest(r, &operations)
+			for _, o := range operations {
+				switch o.Operation {
+				case "replace":
+					switch o.Path {
+					{{range $field := .AllUniquePatchableFields}}
+					case "/{{$field.Name}}":
+						authUser := c.GetUserFromRequest(r)
+						c.setNotificationField_{{$field.Name}}_ById(dbTx, authUser, idVal, o.Value.({{$field.Type}}))
+						break
+					{{end}}
+					default:
+						panic(c.CreateHttpStatusClientError_BadRequest("Unsupported replace field name for '{{$outerScope.Name}}' entity: " + o.Path))
+					}
+					break
+				default:
+					panic(c.CreateHttpStatusClientError_BadRequest("Unsupported path operation type: " + o.Operation))
+				}
+			}
+		}
 		{{end}}
 
 		{{if .IsDeleteMethodEnabled}}
@@ -59,6 +126,7 @@ func newGoPlugin() plugins.Plugin {
 		}
 		{{end}}
 
+		{{if .IsGetORListMethodEnabled}}
 		func (c *controller) Get(w http.ResponseWriter, r *http.Request) {
 			idVal := c.OptionalUrlParamValue(r, "id")
 			
@@ -67,7 +135,23 @@ func newGoPlugin() plugins.Plugin {
 			if idVal.HasValue() {
 				{{if .IsGetMethodEnabled}}
 				//Get
-				c.RenderJson(w, c.get{{$outerScope.Name}}ById(authUser, idVal))
+
+				fields := c.MustQueryValue(r, "fields").String()
+				switch fields {
+				{{range $group := .GetableFieldGroups}}
+				case "{{. | join_field_names_for_url_query}}":					
+					entity := c.get{{$outerScope.Name}}ById(authUser, idVal)
+					c.RenderJson(w, &getDTO_Response__{{. | class_name_suffix}}{
+						{{range $field := $group}}
+						entity.{{$field.Name}}(),
+						{{end}}
+					})
+					break
+				{{end}}
+				default:
+					panic(c.CreateHttpStatusClientError_BadRequest("Unsupported field combination: " + fields))
+				}
+
 				{{else}}
 				//Get method disabled in dto generator
 				{{end}}
@@ -90,9 +174,9 @@ func newGoPlugin() plugins.Plugin {
 					list := c.list{{$outerScope.Name}}s_{{. | class_name_suffix}}(authUser, offset, limit)
 					totalCount := c.countAll{{$outerScope.Name}}s(authUser)
 
-					entities := []*listEntity_{{. | class_name_suffix}}{}
+					entities := []*listEntity_Response__{{. | class_name_suffix}}{}
 					for _, e := range list {
-						entities = append(entities, &listEntity_{{. | class_name_suffix}}{
+						entities = append(entities, &listEntity_Response__{{. | class_name_suffix}}{
 							{{range $field := $group}}
 							e.{{$field.Name}}(),
 							{{end}}
@@ -145,6 +229,10 @@ func (g *goPlugin) GenerateCode(logger helpers.Logger, dtoSetup *setup.DTOSetup)
 	}
 
 	return formattedCodeBytes
+}
+
+func (g *goPlugin) funcFieldTypeName(dtoField *setup.DTOField) string {
+	return dtoField.Type
 }
 
 func (g *goPlugin) funcFieldDefinitions(dtoFields []*setup.DTOField) string {

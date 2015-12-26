@@ -26,6 +26,7 @@ type dtoSetupYAML struct {
 
 	AllFields                []*DTOField `json:"all_fields"`
 	IdFieldName              string      `json:"id_field_name"`
+	InsertableFieldNames     []string    `json:"insertable_field_names"`
 	ListableFieldNameGroups  [][]string  `json:"listable_field_name_groups"`
 	GetableFieldNameGroups   [][]string  `json:"getable_field_name_groups"`
 	PatchableFieldNameGroups [][]string  `json:"patchable_field_name_groups"`
@@ -71,6 +72,8 @@ type DTOSetup struct {
 	ListableFieldGroups  [][]*DTOField
 	GetableFieldGroups   [][]*DTOField
 	PatchableFieldGroups [][]*DTOField
+
+	AllUniquePatchableFields []*DTOField
 }
 
 func NewDTOSetupFromYAML(setup *dtoSetupYAML) *DTOSetup {
@@ -100,6 +103,8 @@ func NewDTOSetupFromYAML(setup *dtoSetupYAML) *DTOSetup {
 	d.ListableFieldGroups = d.getListableFieldGroups()
 	d.GetableFieldGroups = d.getGetableFieldGroups()
 	d.PatchableFieldGroups = d.getPatchableFieldGroups()
+
+	d.AllUniquePatchableFields = d.getUniqueFieldsAcrossAllGroups(d.PatchableFieldGroups)
 
 	return d
 }
@@ -134,17 +139,26 @@ func (d *DTOSetup) getGroupedFieldsByNames(groupedFieldNames [][]string) [][]*DT
 	return groups
 }
 
+func (d *DTOSetup) getUniqueFieldsAcrossAllGroups(groups [][]*DTOField) (fields DTOFieldSlice) {
+	fields = DTOFieldSlice([]*DTOField{})
+	for _, g := range groups {
+		for _, field := range g {
+			if !fields.ContainsFieldByName(field.Name) {
+				fields = append(fields, field)
+			}
+		}
+	}
+	return
+}
+
 func (d *DTOSetup) getIdField() *DTOField {
 	return d.getFieldByName(d.IdFieldName)
 }
 
 func (d *DTOSetup) getInsertableFields() (fields []*DTOField) {
 	fields = []*DTOField{}
-	for _, f := range d.AllFields {
-		if f.Name == d.IdFieldName {
-			continue //When inserting an entity we do not have an ID yet
-		}
-		fields = append(fields, f)
+	for _, fieldName := range d.InsertableFieldNames {
+		fields = append(fields, d.getFieldByName(fieldName))
 	}
 	return
 }

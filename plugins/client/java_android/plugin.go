@@ -58,11 +58,9 @@ func newJavaPlugin() plugins.Plugin {
 	        }
 
 	        {{range .PatchableFieldGroups}}
-	        private static class Request_{{. | class_name_suffix}} {
-	            public ArrayList<HashMap<String, Object>> Maps;
-
+	        private static class Request_{{. | class_name_suffix}} extends ArrayList<HashMap<String, Object>> {
 	            private Request_{{. | class_name_suffix}}({{. | constructor_params}}) {
-	                Maps = new ArrayList<>();
+	                super();
 	                {{. | patch_request_constructor_body}}
 	            }
 	        }
@@ -107,7 +105,7 @@ func newJavaPlugin() plugins.Plugin {
             {{if .IsPatchMethodEnabled}}
             // Patch/update
             {{range .PatchableFieldGroups}}
-            @PATCH("{{$outerScope.Url}}/{id}?fields={{. | join_field_names_for_url_query}}")
+            @PATCH("{{$outerScope.Url}}/{id}")
             Call<Void> patch(@Path("id") {{$outerScope.IdField | field_type_name}} id, @Body {{$outerScope.Name}}PatchDTOs.Request_{{. | class_name_suffix}} body);
             {{end}}
             {{end}}
@@ -207,7 +205,7 @@ func (j *javaPlugin) funcClassNameSuffix(dtoFields []*setup.DTOField) string {
 func (j *javaPlugin) funcPatchRequestConstructorBody(dtoFields []*setup.DTOField) string {
 	line := []string{}
 	for _, field := range dtoFields {
-		line = append(line, fmt.Sprintf(`Maps.add(newReplaceMap("%s", %s));`, field.NameToKebabCase(), field.NameToLowerCamelCase()))
+		line = append(line, fmt.Sprintf(`add(newReplaceMap("%s", %s));`, field.Name, field.NameToLowerCamelCase()))
 	}
 	return strings.Join(line, "\n")
 }
