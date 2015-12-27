@@ -6,8 +6,8 @@ import (
 	"os"
 
 	//Required for plugins to register
-	_ "github.com/zero-boilerplate/dto-layer-generator/plugins/client/java_android"
-	_ "github.com/zero-boilerplate/dto-layer-generator/plugins/server/go"
+	_ "github.com/zero-boilerplate/dto-layer-generator/plugins/client/java_retrofit"
+	_ "github.com/zero-boilerplate/dto-layer-generator/plugins/server/go_common_ddd"
 
 	"github.com/zero-boilerplate/dto-layer-generator/helpers"
 	"github.com/zero-boilerplate/dto-layer-generator/plugins"

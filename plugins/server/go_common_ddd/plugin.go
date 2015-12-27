@@ -1,4 +1,4 @@
-package server
+package go_negroni
 
 import (
 	"bytes"
@@ -14,8 +14,8 @@ import (
 	"github.com/zero-boilerplate/dto-layer-generator/setup"
 )
 
-func newGoPlugin() plugins.Plugin {
-	p := &goPlugin{}
+func newPlugin() plugins.Plugin {
+	p := &plugin{}
 	p.tpl = template.Must(template.New("name").Funcs(template.FuncMap{
 		"field_type_name":                p.funcFieldTypeName,
 		"fielddefs":                      p.funcFieldDefinitions,
@@ -203,13 +203,13 @@ func newGoPlugin() plugins.Plugin {
 	return p
 }
 
-type goPlugin struct {
+type plugin struct {
 	tpl *template.Template
 }
 
-func (g *goPlugin) GenerateCode(logger helpers.Logger, dtoSetup *setup.DTOSetup) []byte {
+func (p *plugin) GenerateCode(logger helpers.Logger, dtoSetup *setup.DTOSetup) []byte {
 	var outputBuf bytes.Buffer
-	err := g.tpl.Execute(&outputBuf, dtoSetup)
+	err := p.tpl.Execute(&outputBuf, dtoSetup)
 	CheckError(err)
 
 	prettyCode := helpers.PrettifyCode(outputBuf.Bytes(), &helpers.PrettifyRules{
@@ -231,11 +231,11 @@ func (g *goPlugin) GenerateCode(logger helpers.Logger, dtoSetup *setup.DTOSetup)
 	return formattedCodeBytes
 }
 
-func (g *goPlugin) funcFieldTypeName(dtoField *setup.DTOField) string {
+func (p *plugin) funcFieldTypeName(dtoField *setup.DTOField) string {
 	return dtoField.Type
 }
 
-func (g *goPlugin) funcFieldDefinitions(dtoFields []*setup.DTOField) string {
+func (p *plugin) funcFieldDefinitions(dtoFields []*setup.DTOField) string {
 	lines := []string{}
 	for _, field := range dtoFields {
 		lines = append(lines, fmt.Sprintf(`%s %s`, field.Name, field.Type))
@@ -243,7 +243,7 @@ func (g *goPlugin) funcFieldDefinitions(dtoFields []*setup.DTOField) string {
 	return strings.Join(lines, "\n")
 }
 
-func (g *goPlugin) funcClassNameSuffix(dtoFields []*setup.DTOField) string {
+func (p *plugin) funcClassNameSuffix(dtoFields []*setup.DTOField) string {
 	fieldNames := []string{}
 	for _, f := range dtoFields {
 		fieldNames = append(fieldNames, f.Name)
@@ -251,7 +251,7 @@ func (g *goPlugin) funcClassNameSuffix(dtoFields []*setup.DTOField) string {
 	return strings.Join(fieldNames, "_")
 }
 
-func (g *goPlugin) funcJoinFieldNamesForUrlQuery(dtoFields []*setup.DTOField) string {
+func (p *plugin) funcJoinFieldNamesForUrlQuery(dtoFields []*setup.DTOField) string {
 	//TODO: Could make this a helper function as also used in plugin client/java_android?
 	lowercaseFieldNames := []string{}
 	for _, f := range dtoFields {
@@ -262,5 +262,5 @@ func (g *goPlugin) funcJoinFieldNamesForUrlQuery(dtoFields []*setup.DTOField) st
 }
 
 func init() {
-	plugins.RegisterPlugin("go", newGoPlugin())
+	plugins.RegisterPlugin("server__go_common_ddd", newPlugin())
 }

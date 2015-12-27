@@ -1,4 +1,4 @@
-package client
+package java_retrofit
 
 import (
 	"bytes"
@@ -13,8 +13,8 @@ import (
 	"github.com/zero-boilerplate/dto-layer-generator/setup"
 )
 
-func newJavaPlugin() plugins.Plugin {
-	p := &javaPlugin{}
+func newPlugin() plugins.Plugin {
+	p := &plugin{}
 
 	p.tpl = template.Must(template.New("name").Funcs(template.FuncMap{
 		"field_type_name":                p.funcFieldTypeName,
@@ -157,32 +157,32 @@ func newJavaPlugin() plugins.Plugin {
 	return p
 }
 
-type javaPlugin struct {
+type plugin struct {
 	tpl         *template.Template
 	typeNameMap map[string]string
 }
 
-func (j *javaPlugin) funcFieldTypeName(dtoField *setup.DTOField) string {
-	return dtoField.ConvertTypeName(j.typeNameMap)
+func (p *plugin) funcFieldTypeName(dtoField *setup.DTOField) string {
+	return dtoField.ConvertTypeName(p.typeNameMap)
 }
 
-func (j *javaPlugin) funcFieldDefinitions(dtoFields []*setup.DTOField) string {
+func (p *plugin) funcFieldDefinitions(dtoFields []*setup.DTOField) string {
 	lines := []string{}
 	for _, field := range dtoFields {
-		lines = append(lines, fmt.Sprintf(`public %s %s;`, field.ConvertTypeName(j.typeNameMap), field.Name))
+		lines = append(lines, fmt.Sprintf(`public %s %s;`, field.ConvertTypeName(p.typeNameMap), field.Name))
 	}
 	return strings.Join(lines, "\n")
 }
 
-func (j *javaPlugin) funcConstructorParams(dtoFields []*setup.DTOField) string {
+func (p *plugin) funcConstructorParams(dtoFields []*setup.DTOField) string {
 	param := []string{}
 	for _, field := range dtoFields {
-		param = append(param, fmt.Sprintf(`%s %s`, field.ConvertTypeName(j.typeNameMap), field.NameToLowerCamelCase()))
+		param = append(param, fmt.Sprintf(`%s %s`, field.ConvertTypeName(p.typeNameMap), field.NameToLowerCamelCase()))
 	}
 	return strings.Join(param, ", ")
 }
 
-func (j *javaPlugin) funcRequestConstructorBody(dtoFields []*setup.DTOField) string {
+func (p *plugin) funcRequestConstructorBody(dtoFields []*setup.DTOField) string {
 	line := []string{}
 	for _, field := range dtoFields {
 		line = append(line, fmt.Sprintf(`this.%s = %s;`, field.Name, field.NameToLowerCamelCase()))
@@ -190,11 +190,11 @@ func (j *javaPlugin) funcRequestConstructorBody(dtoFields []*setup.DTOField) str
 	return strings.Join(line, "\n")
 }
 
-func (j *javaPlugin) funcSingleFieldDefinition(dtoField *setup.DTOField) string {
-	return j.funcFieldDefinitions([]*setup.DTOField{dtoField})
+func (p *plugin) funcSingleFieldDefinition(dtoField *setup.DTOField) string {
+	return p.funcFieldDefinitions([]*setup.DTOField{dtoField})
 }
 
-func (j *javaPlugin) funcClassNameSuffix(dtoFields []*setup.DTOField) string {
+func (p *plugin) funcClassNameSuffix(dtoFields []*setup.DTOField) string {
 	fieldNames := []string{}
 	for _, f := range dtoFields {
 		fieldNames = append(fieldNames, f.Name)
@@ -202,7 +202,7 @@ func (j *javaPlugin) funcClassNameSuffix(dtoFields []*setup.DTOField) string {
 	return strings.Join(fieldNames, "_")
 }
 
-func (j *javaPlugin) funcPatchRequestConstructorBody(dtoFields []*setup.DTOField) string {
+func (p *plugin) funcPatchRequestConstructorBody(dtoFields []*setup.DTOField) string {
 	line := []string{}
 	for _, field := range dtoFields {
 		line = append(line, fmt.Sprintf(`add(newReplaceMap("%s", %s));`, field.Name, field.NameToLowerCamelCase()))
@@ -210,7 +210,7 @@ func (j *javaPlugin) funcPatchRequestConstructorBody(dtoFields []*setup.DTOField
 	return strings.Join(line, "\n")
 }
 
-func (j *javaPlugin) funcJoinFieldNamesForUrlQuery(dtoFields []*setup.DTOField) string {
+func (p *plugin) funcJoinFieldNamesForUrlQuery(dtoFields []*setup.DTOField) string {
 	lowercaseFieldNames := []string{}
 	for _, f := range dtoFields {
 		lowercaseFieldNames = append(lowercaseFieldNames, f.NameToSnakeCase())
@@ -219,9 +219,9 @@ func (j *javaPlugin) funcJoinFieldNamesForUrlQuery(dtoFields []*setup.DTOField) 
 	return encoded
 }
 
-func (j *javaPlugin) GenerateCode(logger helpers.Logger, dtoSetup *setup.DTOSetup) []byte {
+func (p *plugin) GenerateCode(logger helpers.Logger, dtoSetup *setup.DTOSetup) []byte {
 	var outputBuf bytes.Buffer
-	err := j.tpl.Execute(&outputBuf, dtoSetup)
+	err := p.tpl.Execute(&outputBuf, dtoSetup)
 	CheckError(err)
 
 	return helpers.PrettifyCode(outputBuf.Bytes(), &helpers.PrettifyRules{
@@ -232,5 +232,5 @@ func (j *javaPlugin) GenerateCode(logger helpers.Logger, dtoSetup *setup.DTOSetu
 }
 
 func init() {
-	plugins.RegisterPlugin("java", newJavaPlugin())
+	plugins.RegisterPlugin("client__java_retrofit", newPlugin())
 }
