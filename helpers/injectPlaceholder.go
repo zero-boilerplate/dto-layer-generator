@@ -20,6 +20,7 @@ func InjectContentIntoFilePlaceholder(logger Logger, filePath, placeholder, cont
 		fileContent, err := ioutil.ReadFile(filePath)
 		CheckError(err)
 
+		foundPlaceholder := false
 		isBeginPlaceholder := false
 
 		beginText := "{{BEGIN " + placeholder + "}}"
@@ -39,6 +40,7 @@ func InjectContentIntoFilePlaceholder(logger Logger, filePath, placeholder, cont
 
 			if strings.Contains(trimmedLine, beginText) {
 				isBeginPlaceholder = true
+				foundPlaceholder = true
 
 				//Indent all the code with the same indentation as the 'begin' placeholder line
 				prefixSpacesCount := len(lineWithTabsReplacedBySpaces) - len(strings.TrimLeft(lineWithTabsReplacedBySpaces, " "))
@@ -67,6 +69,10 @@ func InjectContentIntoFilePlaceholder(logger Logger, filePath, placeholder, cont
 		}
 
 		finalContent = strings.Join(finalLines, "\n")
+
+		if !foundPlaceholder {
+			logger.Error("Placeholder '%s' not found in '%s'", placeholder, filePath)
+		}
 	}
 	err := ioutil.WriteFile(filePath, []byte(finalContent), 0600)
 	CheckError(err)
