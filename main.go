@@ -7,6 +7,7 @@ import (
 
 	//Required for plugins to register
 	_ "github.com/zero-boilerplate/dto-layer-generator/plugins/client/java_retrofit"
+	_ "github.com/zero-boilerplate/dto-layer-generator/plugins/client/javascript_es6"
 	_ "github.com/zero-boilerplate/dto-layer-generator/plugins/server/go_common_ddd"
 
 	"github.com/zero-boilerplate/dto-layer-generator/helpers"

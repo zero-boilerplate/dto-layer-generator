@@ -126,7 +126,7 @@ func newPlugin() plugins.Plugin {
 		}
 		{{end}}
 
-		{{if .IsGetORListMethodEnabled}}
+		{{if .IsGetORListORCountMethodEnabled}}
 		func (c *controller) Get(w http.ResponseWriter, r *http.Request) {
 			idVal := c.OptionalUrlParamValue(r, "id")
 			
@@ -153,50 +153,61 @@ func newPlugin() plugins.Plugin {
 				}
 
 				{{else}}
-				//Get method disabled in dto generator
+				panic(c.CreateHttpStatusClientError_BadRequest("GET by ID disabled for {{$outerScope.Name}}"))
 				{{end}}
-			} else {
-				{{if .IsListMethodEnabled}}
-				//List
-				
-				offset := c.OptionalQueryValue(r, "offset").Int64()
 
-				limit := int64(DefaultNotificationLimit)
-				if limitVal := c.OptionalQueryValue(r, "limit"); limitVal.HasValue() {
-					limit = limitVal.Int64()
-				}
-
-				fields := c.MustQueryValue(r, "fields").String()
-				switch fields {
-				{{range $group := .ListableFieldGroups}}
-				case "{{. | join_field_names_for_url_query}}":
-					
-					list := c.list{{$outerScope.Name}}s_{{. | class_name_suffix}}(authUser, offset, limit)
-					totalCount := c.countAll{{$outerScope.Name}}s(authUser)
-
-					entities := []*listEntity_Response__{{. | class_name_suffix}}{}
-					for _, e := range list {
-						entities = append(entities, &listEntity_Response__{{. | class_name_suffix}}{
-							{{range $field := $group}}
-							e.{{$field.Name}}(),
-							{{end}}
-						})
-					}
-					c.RenderJson(w, &listDTO_{{. | class_name_suffix}} {
-						entities,
-						totalCount,
-					})
-
-					break
-				{{end}}
-				default:
-					panic(c.CreateHttpStatusClientError_BadRequest("Unsupported field combination: " + fields))
-				}
-
-				{{else}}
-				//List method disabled in dto generator
-				{{end}}
+				return
 			}
+				
+			{{if .IsCountMethodEnabled}}
+			//Count
+			possibleOnlyCountAllValue := c.OptionalQueryValue(r, "only_count_all")
+			if possibleOnlyCountAllValue.HasValue() && possibleOnlyCountAllValue.Bool() {
+				totalCount := c.countAll{{$outerScope.Name}}s(authUser)
+				c.RenderJson(w, totalCount)
+				return
+			}
+			{{end}}
+
+			{{if .IsListMethodEnabled}}
+			//List
+			offset := c.OptionalQueryValue(r, "offset").Int64()
+
+			limit := int64(DefaultNotificationLimit)
+			if limitVal := c.OptionalQueryValue(r, "limit"); limitVal.HasValue() {
+				limit = limitVal.Int64()
+			}
+
+			fields := c.MustQueryValue(r, "fields").String()
+			switch fields {
+			{{range $group := .ListableFieldGroups}}
+			case "{{. | join_field_names_for_url_query}}":
+				
+				list := c.list{{$outerScope.Name}}s_{{. | class_name_suffix}}(authUser, offset, limit)
+				totalCount := c.countAll{{$outerScope.Name}}s(authUser)
+
+				entities := []*listEntity_Response__{{. | class_name_suffix}}{}
+				for _, e := range list {
+					entities = append(entities, &listEntity_Response__{{. | class_name_suffix}}{
+						{{range $field := $group}}
+						e.{{$field.Name}}(),
+						{{end}}
+					})
+				}
+				c.RenderJson(w, &listDTO_{{. | class_name_suffix}} {
+					entities,
+					totalCount,
+				})
+
+				break
+			{{end}}
+			default:
+				panic(c.CreateHttpStatusClientError_BadRequest("Unsupported field combination: " + fields))
+			}
+
+			{{else}}
+			panic(c.CreateHttpStatusClientError_BadRequest("List disabled for {{$outerScope.Name}}"))
+			{{end}}			
 		}
 		{{end}}
 	`))

@@ -33,7 +33,7 @@ type dtoSetupYAML struct {
 }
 
 func (d *dtoSetupYAML) validate() {
-	allowedMethods := []string{"INSERT", "PATCH", "LIST", "GET", "DELETE"}
+	allowedMethods := []string{"INSERT", "PATCH", "LIST", "COUNT", "GET", "DELETE"}
 	for _, m := range d.EnabledMethods {
 		isAllowed := false
 		for _, am := range allowedMethods {
@@ -62,10 +62,11 @@ type DTOSetup struct {
 	IsInsertMethodEnabled bool
 	IsPatchMethodEnabled  bool
 	IsListMethodEnabled   bool
+	IsCountMethodEnabled  bool
 	IsGetMethodEnabled    bool
 	IsDeleteMethodEnabled bool
 
-	IsGetORListMethodEnabled bool
+	IsGetORListORCountMethodEnabled bool
 
 	IdField              *DTOField
 	InsertableFields     []*DTOField
@@ -93,10 +94,11 @@ func NewDTOSetupFromYAML(setup *dtoSetupYAML) *DTOSetup {
 	d.IsInsertMethodEnabled = d.isMethodEnabled("INSERT")
 	d.IsPatchMethodEnabled = d.isMethodEnabled("PATCH")
 	d.IsListMethodEnabled = d.isMethodEnabled("LIST")
+	d.IsCountMethodEnabled = d.isMethodEnabled("COUNT")
 	d.IsGetMethodEnabled = d.isMethodEnabled("GET")
 	d.IsDeleteMethodEnabled = d.isMethodEnabled("DELETE")
 
-	d.IsGetORListMethodEnabled = d.IsGetMethodEnabled || d.IsListMethodEnabled
+	d.IsGetORListORCountMethodEnabled = d.IsGetMethodEnabled || d.IsListMethodEnabled || d.IsCountMethodEnabled
 
 	d.IdField = d.getIdField()
 	d.InsertableFields = d.getInsertableFields()

@@ -117,6 +117,12 @@ func newPlugin() plugins.Plugin {
             Call<{{$outerScope.Name}}ListDTOs.Response_{{. | class_name_suffix}}> list_{{. | class_name_suffix}}();
             {{end}}
             {{end}}
+            
+            {{if .IsCountMethodEnabled}}
+            //Count
+            @GET("{{$outerScope.Url}}?only_count_all=true")
+            Call<Integer> countAll{{.Name}}s();
+            {{end}}
 
             {{if .IsGetMethodEnabled}}
             // Get single
@@ -225,9 +231,13 @@ func (p *plugin) GenerateCode(logger helpers.Logger, dtoSetup *setup.DTOSetup) [
 	CheckError(err)
 
 	return helpers.PrettifyCode(outputBuf.Bytes(), &helpers.PrettifyRules{
-		MustPrefixWithEmptyLine:  func(trimmedLine string) bool { return strings.HasPrefix(trimmedLine, "private class") },
-		StartIndentNextLine:      func(trimmedLine string) bool { return strings.HasSuffix(trimmedLine, "{") },
-		StopIndentingCurrentLine: func(trimmedLine string) bool { return strings.HasSuffix(trimmedLine, "}") },
+		MustPrefixWithEmptyLine: func(trimmedLine string) bool { return strings.HasPrefix(trimmedLine, "private class") },
+		StartIndentNextLine: func(trimmedLine string) bool {
+			return strings.Count(trimmedLine, "{") > strings.Count(trimmedLine, "}")
+		},
+		StopIndentingCurrentLine: func(trimmedLine string) bool {
+			return strings.Count(trimmedLine, "{") < strings.Count(trimmedLine, "}")
+		},
 	})
 }
 
