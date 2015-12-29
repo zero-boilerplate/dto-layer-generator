@@ -104,7 +104,7 @@ func newPlugin() plugins.Plugin {
 					{{range $field := .AllUniquePatchableFields}}
 					case "/{{$field.Name}}":
 						authUser := c.GetUserFromRequest(r)
-						c.setNotificationField_{{$field.Name}}_ById(dbTx, authUser, idVal, o.Value.({{$field.Type}}))
+						c.set{{$outerScope.Name}}Field_{{$field.Name}}_ById(dbTx, authUser, idVal, o.Value.({{$field.Type}}))
 						break
 					{{end}}
 					default:
@@ -173,7 +173,7 @@ func newPlugin() plugins.Plugin {
 			//List
 			offset := c.OptionalQueryValue(r, "offset").Int64()
 
-			limit := int64(DefaultNotificationLimit)
+			limit := int64(Default{{$outerScope.Name}}Limit)
 			if limitVal := c.OptionalQueryValue(r, "limit"); limitVal.HasValue() {
 				limit = limitVal.Int64()
 			}
