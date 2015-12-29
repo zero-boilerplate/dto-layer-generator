@@ -17,10 +17,11 @@ import (
 func newPlugin() plugins.Plugin {
 	p := &plugin{}
 	p.tpl = template.Must(template.New("name").Funcs(template.FuncMap{
-		"field_type_name":                p.funcFieldTypeName,
-		"fielddefs":                      p.funcFieldDefinitions,
-		"class_name_suffix":              p.funcClassNameSuffix,
-		"join_field_names_for_url_query": p.funcJoinFieldNamesForUrlQuery,
+		"field_type_name":                   p.funcFieldTypeName,
+		"fielddefs":                         p.funcFieldDefinitions,
+		"class_name_suffix":                 p.funcClassNameSuffix,
+		"join_field_names_for_url_query":    p.funcJoinFieldNamesForUrlQuery,
+		"patch_op_get_value_from_interface": p.funcPatchOpGetValueFromInterface,
 	}).Parse(`
 		{{$outerScope := .}}
 		// Generated with github.com/zero-boilerplate/dto-layer-generator
@@ -104,7 +105,7 @@ func newPlugin() plugins.Plugin {
 					{{range $field := .AllUniquePatchableFields}}
 					case "/{{$field.Name}}":
 						authUser := c.GetUserFromRequest(r)
-						c.set{{$outerScope.Name}}Field_{{$field.Name}}_ById(dbTx, authUser, idVal, o.Value.({{$field.Type}}))
+						c.set{{$outerScope.Name}}Field_{{$field.Name}}_ById(dbTx, authUser, idVal, {{$field | patch_op_get_value_from_interface}})
 						break
 					{{end}}
 					default:
@@ -270,6 +271,24 @@ func (p *plugin) funcJoinFieldNamesForUrlQuery(dtoFields []*setup.DTOField) stri
 	}
 	encoded := url.QueryEscape(strings.Join(lowercaseFieldNames, "."))
 	return encoded
+}
+
+func (p *plugin) funcPatchOpGetValueFromInterface(dtoField *setup.DTOField) string {
+	//JSON unmarshalling in golang only supports these types (as per docs https://golang.org/pkg/encoding/json/):
+	//  - bool, for JSON booleans
+	//  - float64, for JSON numbers
+	//  - string, for JSON strings
+	//  - []interface{}, for JSON arrays
+	//  - map[string]interface{}, for JSON objects
+	//  - nil for JSON null
+
+	switch dtoField.Type {
+	case "float32", "int", "int8", "int16", "int32", "int64", "uint", "uint8", "uint16", "uint32", "uint64", "byte":
+		//Cast to the type after type-interfacing it to float64
+		return fmt.Sprintf(`%s(o.Value.(float64))`, dtoField.Type)
+	default:
+		return fmt.Sprintf(`o.Value.(%s)`, dtoField.Type)
+	}
 }
 
 func init() {
