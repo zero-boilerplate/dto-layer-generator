@@ -18,6 +18,15 @@ func (d *DTOField) ConvertTypeName(typeNameMap map[string]string) string {
 	panic(fmt.Sprintf("Cannot convert TypeName from %s using map: %#v", d.Type, typeNameMap))
 }
 
+func (d *DTOField) IsNumberType() bool {
+	switch d.Type {
+	case "float64", "float32", "int", "int8", "int16", "int32", "int64", "uint", "uint8", "uint16", "uint32", "uint64", "byte":
+		return true
+	default:
+		return false
+	}
+}
+
 func (d *DTOField) NameToLowerCamelCase() string {
 	return helpers.ToLowerCamelCase(d.Name)
 }
