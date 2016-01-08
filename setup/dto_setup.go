@@ -54,6 +54,17 @@ func (d *dtoSetupYAML) resolveEnvironmentVariablesInPaths() {
 	}
 }
 
+func (d *dtoSetupYAML) populateFieldTypes() {
+	for _, f := range d.AllFields {
+		if f.Uptype == "" {
+			f.Uptype = f.Type
+		}
+		if f.Downtype == "" {
+			f.Downtype = f.Type
+		}
+	}
+}
+
 type DTOSetup struct {
 	*dtoSetupYAML
 
@@ -80,6 +91,7 @@ type DTOSetup struct {
 func NewDTOSetupFromYAML(setup *dtoSetupYAML) *DTOSetup {
 	setup.validate()
 	setup.resolveEnvironmentVariablesInPaths()
+	setup.populateFieldTypes()
 
 	d := &DTOSetup{dtoSetupYAML: setup}
 

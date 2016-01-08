@@ -17,11 +17,13 @@ func newPlugin() plugins.Plugin {
 	p := &plugin{}
 
 	p.tpl = template.Must(template.New("name").Funcs(template.FuncMap{
-		"field_type_name":                p.funcFieldTypeName,
-		"fielddefs":                      p.funcFieldDefinitions,
-		"constructor_params":             p.funcConstructorParams,
+		"up_field_type_name":             p.funcUpFieldTypeName,
+		"down_field_type_name":           p.funcDownFieldTypeName,
+		"up_fielddefs":                   p.funcUpfieldDefinitions,
+		"down_fielddefs":                 p.funcDownfieldDefinitions,
+		"up_constructor_params":          p.funcUpConstructorParams,
 		"request_constructor_body":       p.funcRequestConstructorBody,
-		"single_fielddef":                p.funcSingleFieldDefinition,
+		"up_single_fielddef":             p.funcSingleUpFieldDefinition,
 		"class_name_suffix":              p.funcClassNameSuffix,
 		"patch_request_constructor_body": p.funcPatchRequestConstructorBody,
 		"join_field_names_for_url_query": p.funcJoinFieldNamesForUrlQuery,
@@ -33,15 +35,15 @@ func newPlugin() plugins.Plugin {
         {{if .IsInsertMethodEnabled}}
 		private static class {{.Name}}InsertDTO {
 			private static class Request {
-	            {{.InsertableFields | fielddefs}}
+	            {{.InsertableFields | up_fielddefs}}
 
-	            private Request({{.InsertableFields | constructor_params}}) {
+	            private Request({{.InsertableFields | up_constructor_params}}) {
 	                {{.InsertableFields | request_constructor_body}}
 	            }
 	        }
 
 	        private static class Response {
-	            {{.IdField | single_fielddef}}
+	            {{.IdField | up_single_fielddef}}
 	        }			
 		}
         {{end}}
@@ -59,7 +61,7 @@ func newPlugin() plugins.Plugin {
 
 	        {{range .PatchableFieldGroups}}
 	        private static class Request_{{. | class_name_suffix}} extends ArrayList<HashMap<String, Object>> {
-	            private Request_{{. | class_name_suffix}}({{. | constructor_params}}) {
+	            private Request_{{. | class_name_suffix}}({{. | up_constructor_params}}) {
 	                super();
 	                {{. | patch_request_constructor_body}}
 	            }
@@ -73,7 +75,7 @@ func newPlugin() plugins.Plugin {
             {{range .ListableFieldGroups}}
             private static class Response_{{. | class_name_suffix}} {
                 private static class ListItem {
-                    {{. | fielddefs}}
+                    {{. | down_fielddefs}}
                 }
 
                 public ArrayList<ListItem> List;
@@ -87,7 +89,7 @@ func newPlugin() plugins.Plugin {
         private static class {{.Name}}GetDTOs {
             {{range .GetableFieldGroups}}
             private static class Response_{{. | class_name_suffix}} {
-                {{. | fielddefs}}
+                {{. | down_fielddefs}}
             }
             {{end}}
         }
@@ -106,7 +108,7 @@ func newPlugin() plugins.Plugin {
             // Patch/update
             {{range .PatchableFieldGroups}}
             @PATCH("{{$outerScope.Url}}/{id}")
-            Call<Void> patch(@Path("id") {{$outerScope.IdField | field_type_name}} id, @Body {{$outerScope.Name}}PatchDTOs.Request_{{. | class_name_suffix}} body);
+            Call<Void> patch(@Path("id") {{$outerScope.IdField | up_field_type_name}} id, @Body {{$outerScope.Name}}PatchDTOs.Request_{{. | class_name_suffix}} body);
             {{end}}
             {{end}}
 
@@ -128,13 +130,13 @@ func newPlugin() plugins.Plugin {
             // Get single
             {{range .GetableFieldGroups}}
             @GET("{{$outerScope.Url}}/{id}?fields={{. | join_field_names_for_url_query}}")
-            Call<{{$outerScope.Name}}GetDTOs.Response_{{. | class_name_suffix}}> get_{{. | class_name_suffix}}(@Path("id") {{$outerScope.IdField | field_type_name}} id);
+            Call<{{$outerScope.Name}}GetDTOs.Response_{{. | class_name_suffix}}> get_{{. | class_name_suffix}}(@Path("id") {{$outerScope.IdField | down_field_type_name}} id);
             {{end}}
             {{end}}
 
             {{if .IsDeleteMethodEnabled}}
             @DELETE("{{$outerScope.Url}}/{id}")
-            Call<Void> delete(@Path("id") {{$outerScope.IdField | field_type_name}} id);
+            Call<Void> delete(@Path("id") {{$outerScope.IdField | up_field_type_name}} id);
             {{end}}
         }
 
@@ -168,22 +170,34 @@ type plugin struct {
 	typeNameMap map[string]string
 }
 
-func (p *plugin) funcFieldTypeName(dtoField *setup.DTOField) string {
-	return dtoField.ConvertTypeName(p.typeNameMap)
+func (p *plugin) funcUpFieldTypeName(dtoField *setup.DTOField) string {
+	return dtoField.ConvertUptypeName(p.typeNameMap)
 }
 
-func (p *plugin) funcFieldDefinitions(dtoFields []*setup.DTOField) string {
+func (p *plugin) funcDownFieldTypeName(dtoField *setup.DTOField) string {
+	return dtoField.ConvertDowntypeName(p.typeNameMap)
+}
+
+func (p *plugin) funcUpfieldDefinitions(dtoFields []*setup.DTOField) string {
 	lines := []string{}
 	for _, field := range dtoFields {
-		lines = append(lines, fmt.Sprintf(`public %s %s;`, field.ConvertTypeName(p.typeNameMap), field.Name))
+		lines = append(lines, fmt.Sprintf(`public %s %s;`, field.ConvertUptypeName(p.typeNameMap), field.Name))
 	}
 	return strings.Join(lines, "\n")
 }
 
-func (p *plugin) funcConstructorParams(dtoFields []*setup.DTOField) string {
+func (p *plugin) funcDownfieldDefinitions(dtoFields []*setup.DTOField) string {
+	lines := []string{}
+	for _, field := range dtoFields {
+		lines = append(lines, fmt.Sprintf(`public %s %s;`, field.ConvertDowntypeName(p.typeNameMap), field.Name))
+	}
+	return strings.Join(lines, "\n")
+}
+
+func (p *plugin) funcUpConstructorParams(dtoFields []*setup.DTOField) string {
 	param := []string{}
 	for _, field := range dtoFields {
-		param = append(param, fmt.Sprintf(`%s %s`, field.ConvertTypeName(p.typeNameMap), field.NameToLowerCamelCase()))
+		param = append(param, fmt.Sprintf(`%s %s`, field.ConvertUptypeName(p.typeNameMap), field.NameToLowerCamelCase()))
 	}
 	return strings.Join(param, ", ")
 }
@@ -196,8 +210,8 @@ func (p *plugin) funcRequestConstructorBody(dtoFields []*setup.DTOField) string 
 	return strings.Join(line, "\n")
 }
 
-func (p *plugin) funcSingleFieldDefinition(dtoField *setup.DTOField) string {
-	return p.funcFieldDefinitions([]*setup.DTOField{dtoField})
+func (p *plugin) funcSingleUpFieldDefinition(dtoField *setup.DTOField) string {
+	return p.funcUpfieldDefinitions([]*setup.DTOField{dtoField})
 }
 
 func (p *plugin) funcClassNameSuffix(dtoFields []*setup.DTOField) string {

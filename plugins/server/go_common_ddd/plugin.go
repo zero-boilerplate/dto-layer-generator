@@ -17,8 +17,9 @@ import (
 func newPlugin() plugins.Plugin {
 	p := &plugin{}
 	p.tpl = template.Must(template.New("name").Funcs(template.FuncMap{
-		"field_type_name":                   p.funcFieldTypeName,
-		"fielddefs":                         p.funcFieldDefinitions,
+		"up_field_type_name":                p.funcUpFieldTypeName,
+		"up_fielddefs":                      p.funcUpFieldDefinitions,
+		"down_fielddefs":                    p.funcDownFieldDefinitions,
 		"class_name_suffix":                 p.funcClassNameSuffix,
 		"join_field_names_for_url_query":    p.funcJoinFieldNamesForUrlQuery,
 		"patch_op_get_value_from_interface": p.funcPatchOpGetValueFromInterface,
@@ -34,7 +35,7 @@ func newPlugin() plugins.Plugin {
 		
 		{{if .IsInsertMethodEnabled}}
 		type insertDTO_Request struct {
-			{{.InsertableFields | fielddefs}}
+			{{.InsertableFields | up_fielddefs}}
 		}
 
 		func (i *insertDTO_Request) FieldMap(r *http.Request) binding.FieldMap {
@@ -54,7 +55,7 @@ func newPlugin() plugins.Plugin {
 		{{if .IsGetMethodEnabled}}
 		{{range $group := .GetableFieldGroups}}
 		type getDTO_Response__{{. | class_name_suffix}} struct {
-			{{$group | fielddefs}}
+			{{$group | down_fielddefs}}
 		}
 		{{end}}
 		{{end}}
@@ -62,7 +63,7 @@ func newPlugin() plugins.Plugin {
 		{{if .IsListMethodEnabled}}
 		{{range $group := .ListableFieldGroups}}
 		type listEntity_Response__{{. | class_name_suffix}} struct {
-			{{$group | fielddefs}}
+			{{$group | down_fielddefs}}
 		}
 		type listDTO_{{. | class_name_suffix}} struct {
 			List       []*listEntity_Response__{{. | class_name_suffix}}
@@ -84,7 +85,7 @@ func newPlugin() plugins.Plugin {
 			authUser := c.GetUserFromRequest(r)
 			id := c.insert{{$outerScope.Name}}(authUser, dto)
 			c.RenderJson(w, struct{
-				Id {{$outerScope.IdField | field_type_name}}
+				Id {{$outerScope.IdField | up_field_type_name}}
 			}{id})
 		}
 		{{end}}
@@ -243,14 +244,22 @@ func (p *plugin) GenerateCode(logger helpers.Logger, dtoSetup *setup.DTOSetup) [
 	return formattedCodeBytes
 }
 
-func (p *plugin) funcFieldTypeName(dtoField *setup.DTOField) string {
-	return dtoField.Type
+func (p *plugin) funcUpFieldTypeName(dtoField *setup.DTOField) string {
+	return dtoField.Uptype
 }
 
-func (p *plugin) funcFieldDefinitions(dtoFields []*setup.DTOField) string {
+func (p *plugin) funcUpFieldDefinitions(dtoFields []*setup.DTOField) string {
 	lines := []string{}
 	for _, field := range dtoFields {
-		lines = append(lines, fmt.Sprintf(`%s %s`, field.Name, field.Type))
+		lines = append(lines, fmt.Sprintf(`%s %s`, field.Name, field.Uptype))
+	}
+	return strings.Join(lines, "\n")
+}
+
+func (p *plugin) funcDownFieldDefinitions(dtoFields []*setup.DTOField) string {
+	lines := []string{}
+	for _, field := range dtoFields {
+		lines = append(lines, fmt.Sprintf(`%s %s`, field.Name, field.Downtype))
 	}
 	return strings.Join(lines, "\n")
 }
@@ -282,12 +291,14 @@ func (p *plugin) funcPatchOpGetValueFromInterface(dtoField *setup.DTOField) stri
 	//  - map[string]interface{}, for JSON objects
 	//  - nil for JSON null
 
-	switch dtoField.Type {
+	switch dtoField.Uptype {
 	case "float32", "int", "int8", "int16", "int32", "int64", "uint", "uint8", "uint16", "uint32", "uint64", "byte":
 		//Cast to the type after type-interfacing it to float64
-		return fmt.Sprintf(`%s(o.Value.(float64))`, dtoField.Type)
+		return fmt.Sprintf(`%s(o.Value.(float64))`, dtoField.Uptype)
+	case "time.Time":
+		return fmt.Sprint(`c.ConvertStringInterfaceToTime(o.Value)`)
 	default:
-		return fmt.Sprintf(`o.Value.(%s)`, dtoField.Type)
+		return fmt.Sprintf(`o.Value.(%s)`, dtoField.Uptype)
 	}
 }
 

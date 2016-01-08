@@ -7,24 +7,41 @@ import (
 )
 
 type DTOField struct {
-	Name string
-	Type string
+	Name     string
+	Type     string
+	Uptype   string
+	Downtype string
 }
 
-func (d *DTOField) ConvertTypeName(typeNameMap map[string]string) string {
-	if converterTypeName, ok := typeNameMap[d.Type]; ok {
+func (d *DTOField) ConvertUptypeName(typeNameMap map[string]string) string {
+	if converterTypeName, ok := typeNameMap[d.Uptype]; ok {
 		return converterTypeName
 	}
-	panic(fmt.Sprintf("Cannot convert TypeName from %s using map: %#v", d.Type, typeNameMap))
+	panic(fmt.Sprintf("Cannot convert TypeName from %s using map: %#v", d.Uptype, typeNameMap))
 }
 
-func (d *DTOField) IsNumberType() bool {
-	switch d.Type {
+func (d *DTOField) ConvertDowntypeName(typeNameMap map[string]string) string {
+	if converterTypeName, ok := typeNameMap[d.Downtype]; ok {
+		return converterTypeName
+	}
+	panic(fmt.Sprintf("Cannot convert TypeName from %s using map: %#v", d.Downtype, typeNameMap))
+}
+
+func fieldIsNumberType(fieldType string) bool {
+	switch fieldType {
 	case "float64", "float32", "int", "int8", "int16", "int32", "int64", "uint", "uint8", "uint16", "uint32", "uint64", "byte":
 		return true
 	default:
 		return false
 	}
+}
+
+func (d *DTOField) IsNumberUptype() bool {
+	return fieldIsNumberType(d.Uptype)
+}
+
+func (d *DTOField) IsNumberDowntype() bool {
+	return fieldIsNumberType(d.Downtype)
 }
 
 func (d *DTOField) NameToLowerCamelCase() string {

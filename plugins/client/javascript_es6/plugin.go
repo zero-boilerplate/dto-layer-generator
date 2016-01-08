@@ -110,10 +110,10 @@ type plugin struct {
 	tpl *template.Template
 }
 
-func (p *plugin) getFieldValueVariableString(field *setup.DTOField) string {
+func (p *plugin) getUpfieldValueVariableString(field *setup.DTOField) string {
 	fieldValueVar := field.NameToLowerCamelCase()
 
-	if field.IsNumberType() {
+	if field.IsNumberUptype() {
 		//Cast to Number in javascript
 		return fmt.Sprintf("Number(%s)", fieldValueVar)
 	} else {
@@ -149,7 +149,7 @@ func (p *plugin) funcConstructorParams(dtoFields []*setup.DTOField) string {
 func (p *plugin) funcPostList(dtoFields []*setup.DTOField) string {
 	line := []string{}
 	for _, field := range dtoFields {
-		line = append(line, fmt.Sprintf(`%s: "%s"`, field.Name, p.getFieldValueVariableString(field)))
+		line = append(line, fmt.Sprintf(`%s: "%s"`, field.Name, p.getUpfieldValueVariableString(field)))
 	}
 	return strings.Join(line, ",\n")
 }
@@ -157,7 +157,7 @@ func (p *plugin) funcPostList(dtoFields []*setup.DTOField) string {
 func (p *plugin) funcPatchList(dtoFields []*setup.DTOField) string {
 	line := []string{}
 	for _, field := range dtoFields {
-		line = append(line, fmt.Sprintf(`this._newPatchReplaceMap("%s", %s)`, field.Name, p.getFieldValueVariableString(field)))
+		line = append(line, fmt.Sprintf(`this._newPatchReplaceMap("%s", %s)`, field.Name, p.getUpfieldValueVariableString(field)))
 	}
 	return strings.Join(line, ",\n")
 }
